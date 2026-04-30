@@ -1,4 +1,5 @@
 import { UserRepository } from "@calcom/features/users/repositories/UserRepository";
+import { WEBAPP_URL } from "@calcom/lib/constants";
 import { getUserAvatarUrl } from "@calcom/lib/getAvatarUrl";
 import logger from "@calcom/lib/logger";
 import { safeStringify } from "@calcom/lib/safeStringify";
@@ -7,6 +8,17 @@ import { LRUCache } from "lru-cache";
 import type { GetServerSidePropsContext, NextApiRequest } from "next";
 import type { AuthOptions, Session } from "next-auth";
 import { getToken } from "next-auth/jwt";
+
+// NextAuth's getToken auto-detects whether to look for the secure cookie name
+// based on the incoming request. On Vercel serverless functions invoked from
+// TRPC routes, that auto-detection misfires and getToken silently falls back
+// to the non-secure cookie name, fails to find the cookie, and returns null —
+// even though the cookie is present on the request. Pin both values explicitly
+// based on WEBAPP_URL (which mirrors the cookie config in defaultCookies()).
+const USE_SECURE_COOKIES = WEBAPP_URL?.startsWith("https://") ?? false;
+const SESSION_COOKIE_NAME = USE_SECURE_COOKIES
+  ? "__Secure-next-auth.session-token"
+  : "next-auth.session-token";
 
 class LicenseKeySingleton {
   static async getInstance(..._args: unknown[]) { return new LicenseKeySingleton(); }
@@ -45,6 +57,8 @@ export async function getServerSession(options: {
   const token = await getToken({
     req,
     secret,
+    secureCookie: USE_SECURE_COOKIES,
+    cookieName: SESSION_COOKIE_NAME,
   });
 
   log.debug("Getting server session", safeStringify({ token }));
