@@ -29,7 +29,5 @@
       "schedule": "*/5 * * * *"
     }
   ],
-  "functions": {
-  "pages/api/**/*.{js,ts}": { "maxDuration": 60 }
 }
 }
