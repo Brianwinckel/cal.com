@@ -415,6 +415,15 @@ const nextConfig = (phase: string): NextConfig => {
               key: "Referrer-Policy",
               value: "strict-origin-when-cross-origin",
             },
+            // [BREWLYTICS FORK PATCH] Keep the raw book.brewlytics.ai booking
+            // subdomain out of search. The canonical booking entry point is the
+            // marketing site's /book page (which embeds Cal via iframe), so the
+            // standalone Cal pages are thin/duplicate surfaces that shouldn't
+            // rank. This header does not affect iframe/embed functionality.
+            {
+              key: "X-Robots-Tag",
+              value: "noindex, nofollow",
+            },
           ],
         },
         {
