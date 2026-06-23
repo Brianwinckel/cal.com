@@ -37,7 +37,7 @@ export const generateMetadata = async ({ params, searchParams }: PageProps): Pro
   const legacyCtx = buildLegacyCtx(await headers(), await cookies(), await params, await searchParams);
   const props = await getData(legacyCtx);
 
-  const { booking, isSEOIndexable = true, eventData, isBrandingHidden } = props;
+  const { booking, eventData, isBrandingHidden } = props;
   const rescheduleUid = booking?.uid;
   const profileName = eventData?.profile?.name ?? "";
   const title = eventData?.title ?? "";
@@ -60,11 +60,18 @@ export const generateMetadata = async ({ params, searchParams }: PageProps): Pro
     `/${decodedParams.user}/${decodedParams.type}`
   );
 
+  // [BREWLYTICS FORK PATCH] Force noindex on all event-type booking pages
+  // (e.g. /brian/30min). They are thin widget pages (no H1, ~7 content words,
+  // no outgoing links) that Ahrefs flags as low quality. The canonical booking
+  // entry point is the marketing site's /book embed, and the /brian profile
+  // page (a different route) is what actually ranks — both stay indexable.
+  // These pages self-canonical, so noindex carries no canonical conflict.
+  // Upstream value was: index/follow = !(eventData?.hidden || !isSEOIndexable).
   return {
     ...metadata,
     robots: {
-      follow: !(eventData?.hidden || !isSEOIndexable),
-      index: !(eventData?.hidden || !isSEOIndexable),
+      follow: false,
+      index: false,
     },
   };
 };
